@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Puck Brush-Wafer Contact Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.8em;
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .speed-section {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(41, 128, 185, 0.05));
+            border-radius: 12px;
+            border: 2px solid rgba(52, 152, 219, 0.2);
+            margin: 10px 0;
+        }
+
+        .speed-section::before {
+            content: "Brush Speed Profile (mm/sec)";
+            font-weight: 700;
+            font-size: 16px;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #34495e;
+            font-size: 13px;
+            margin-bottom: 3px;
+        }
+
+        input, select {
+            padding: 8px 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+            background: white;
+            flex: 1;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .direction-btn {
+            padding: 6px 12px;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 50px;
+            text-transform: uppercase;
+        }
+
+        .direction-btn:hover {
+            background: linear-gradient(45deg, #2980b9, #21618c);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 18px 35px;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-start {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(46, 204, 113, 0.4);
+        }
+
+        .btn-stop {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-stop:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-clear {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .btn-clear:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(243, 156, 18, 0.4);
+        }
+
+        .animations {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 25px;
+        }
+
+        .animation-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .animation-container:hover {
+            transform: translateY(-5px);
+        }
+
+        .animation-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        canvas {
+            border: 3px solid #34495e;
+            border-radius: 12px;
+            background: #2c3e50;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            height: auto;
+            max-width: 350px;
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(52, 73, 94, 0.1);
+            border-radius: 15px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #2c3e50;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .status {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(45deg, rgba(52, 73, 94, 0.1), rgba(44, 62, 80, 0.1));
+            border-radius: 12px;
+            margin-top: 25px;
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 16px;
+            border: 2px solid rgba(52, 73, 94, 0.2);
+        }
+
+        .path-info {
+            font-size: 11px;
+            color: #7f8c8d;
+            margin-top: 2px;
+            font-style: italic;
+        }
+
+        .stats-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(45deg, rgba(52, 73, 94, 0.1), rgba(44, 62, 80, 0.05));
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 1200px) {
+            .animations {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 40px;
+            border-top: 2px solid rgba(52, 73, 94, 0.1);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .company-info {
+            text-align: left;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 2px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+                border-radius: 15px;
+            }
+
+            h1 {
+                font-size: 2em;
+                margin-bottom: 20px;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+
+            .speed-section {
+                padding: 15px;
+                gap: 10px;
+                margin: 10px 0;
+            }
+
+            .speed-section::before {
+                font-size: 14px;
+            }
+
+            .control-buttons {
+                flex-direction: column;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+
+            .btn {
+                padding: 15px 25px;
+                font-size: 14px;
+                width: 100%;
+            }
+
+            .animations {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                margin-bottom: 20px;
+            }
+
+            .animation-container {
+                padding: 15px;
+            }
+
+            .animation-title {
+                font-size: 16px;
+                margin-bottom: 15px;
+            }
+
+            canvas {
+                max-width: 300px;
+                border-width: 2px;
+            }
+
+            .legend {
+                gap: 8px;
+                font-size: 11px;
+            }
+
+            .legend-item {
+                padding: 4px 8px;
+            }
+
+            .stats-panel {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 15px;
+                margin-top: 15px;
+            }
+
+            .stat-item {
+                padding: 12px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .stat-label {
+                font-size: 11px;
+            }
+
+            .status {
+                padding: 15px;
+                margin-top: 20px;
+                font-size: 14px;
+            }
+
+            .footer {
+                padding: 20px 15px;
+                margin-top: 30px;
+            }
+
+            .logo-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .company-info {
+                text-align: center;
+            }
+
+            .company-name {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.6em;
+                margin-bottom: 15px;
+            }
+
+            .container {
+                padding: 10px;
+                border-radius: 10px;
+            }
+
+            .controls {
+                padding: 10px;
+            }
+
+            .input-group {
+                gap: 4px;
+            }
+
+            label {
+                font-size: 12px;
+            }
+
+            input, select {
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+
+            .direction-btn {
+                padding: 5px 8px;
+                font-size: 10px;
+                min-width: 40px;
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 13px;
+                letter-spacing: 0.8px;
+            }
+
+            .animation-container {
+                padding: 10px;
+            }
+
+            .animation-title {
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+
+            canvas {
+                max-width: 250px;
+                border-width: 2px;
+            }
+
+            .legend {
+                font-size: 10px;
+                gap: 6px;
+            }
+
+            .legend-item {
+                padding: 3px 6px;
+            }
+
+            .legend-color {
+                width: 12px;
+                height: 12px;
+            }
+
+            .path-info {
+                font-size: 10px;
+            }
+
+            .stats-panel {
+                padding: 10px;
+            }
+
+            .stat-item {
+                padding: 8px;
+            }
+
+            .stat-value {
+                font-size: 18px;
+            }
+
+            .stat-label {
+                font-size: 10px;
+            }
+
+            .status {
+                padding: 12px;
+                font-size: 13px;
+            }
+
+            .company-name {
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 320px) {
+            h1 {
+                font-size: 1.4em;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+
+            canvas {
+                max-width: 200px;
+            }
+
+            .company-name {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enhanced Puck Brush-Wafer Contact Simulator</h1>
+        
+        <div class="controls">
+            <div class="input-group">
+                <label>Wafer Diameter (mm)</label>
+                <input type="number" id="waferDiameter" value="300" min="50" max="1000" step="10">
+            </div>
+            
+            <div class="input-group">
+                <label>Brush Outer Diameter (mm)</label>
+                <input type="number" id="brushOuter" value="100" min="10" max="500" step="5">
+            </div>
+            
+            <div class="input-group">
+                <label>Brush Inner Diameter (mm)</label>
+                <input type="number" id="brushInner" value="0" min="0" max="400" step="5">
+                <div class="path-info">Set to 0 for solid brush</div>
+            </div>
+            
+            <div class="input-group">
+                <label>Wafer RPM</label>
+                <div class="input-row">
+                    <input type="number" id="waferRPM" value="50" min="0" max="1000" step="10">
+                    <button class="direction-btn" id="waferDir">CW</button>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>Brush RPM</label>
+                <div class="input-row">
+                    <input type="number" id="brushRPM" value="100" min="0" max="2000" step="10">
+                    <button class="direction-btn" id="brushDir">CW</button>
+                </div>
+            </div>
+            
+            <div class="speed-section">
+                <div class="input-group">
+                    <label>Brush Speed - Section 1 (mm/sec)</label>
+                    <input type="number" id="brushSpeed1" value="25" min="1" max="500" step="5">
+                    <div class="path-info">Speed for first 20% of travel</div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Brush Speed - Section 2 (mm/sec)</label>
+                    <input type="number" id="brushSpeed2" value="25" min="1" max="500" step="5">
+                    <div class="path-info">Speed for second 20% of travel</div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Brush Speed - Section 3 (mm/sec)</label>
+                    <input type="number" id="brushSpeed3" value="25" min="1" max="500" step="5">
+                    <div class="path-info">Speed for middle 20% of travel</div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Brush Speed - Section 4 (mm/sec)</label>
+                    <input type="number" id="brushSpeed4" value="25" min="1" max="500" step="5">
+                    <div class="path-info">Speed for fourth 20% of travel</div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Brush Speed - Section 5 (mm/sec)</label>
+                    <input type="number" id="brushSpeed5" value="25" min="1" max="500" step="5">
+                    <div class="path-info">Speed for final 20% of travel</div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label>Brush Start Position (mm from center)</label>
+                <input type="number" id="brushStartPos" value="100" min="0" max="400" step="5">
+                <div class="path-info">Distance from wafer center to brush start</div>
+            </div>
+            
+            <div class="input-group">
+                <label>Path Curvature (0=straight, 1=radius)</label>
+                <input type="number" id="pathCurvature" value="0" min="0" max="1" step="0.1">
+                <div class="path-info">0 = straight line, 1 = curved path</div>
+            </div>
+            
+            <div class="input-group">
+                <label>Brush Travel Distance (mm)</label>
+                <input type="number" id="travelDistance" value="200" min="10" max="800" step="10">
+            </div>
+            
+            <div class="input-group">
+                <label>Process Time (seconds)</label>
+                <input type="number" id="processTime" value="30" min="5" max="300" step="5">
+            </div>
+            
+            <div class="input-group">
+                <label>Data Density</label>
+                <select id="dataDensity">
+                    <option value="low">Low (Fast)</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High (Detailed)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="control-buttons">
+            <button class="btn btn-start" id="startBtn">▶ Start</button>
+            <button class="btn btn-stop" id="stopBtn">⏹ Stop</button>
+            <button class="btn btn-clear" id="clearBtn">🔄 Clear</button>
+        </div>
+        
+        <div class="animations">
+            <div class="animation-container">
+                <div class="animation-title">Real-Time Animation</div>
+                <canvas id="animationCanvas"></canvas>
+            </div>
+            
+            <div class="animation-container">
+                <div class="animation-title">Contact Time Profile</div>
+                <canvas id="contactCanvas"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #2c3e50;"></div>
+                        <span>None</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00FF00;"></div>
+                        <span>Low</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FFFF00;"></div>
+                        <span>Medium</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF0000;"></div>
+                        <span>High</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="animation-container">
+                <div class="animation-title">Brush Speed Profile Chart</div>
+                <canvas id="speedCanvas"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3498db;"></div>
+                        <span>Current Speed</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #95a5a6;"></div>
+                        <span>Target Speed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats-panel" id="statsPanel">
+            <div class="stat-item">
+                <div class="stat-value" id="simulationTimer">0.0s</div>
+                <div class="stat-label">Simulation Time</div>
+            </div>
+        </div>
+        
+        <div class="status" id="status">Ready to start simulation</div>
+        
+        <div class="footer">
+            <div class="logo-container">
+                <div class="company-info">
+                    <div class="company-name">© LycheeByte LLC</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class BrushWaferSimulator {
+            constructor() {
+                this.animationCanvas = document.getElementById('animationCanvas');
+                this.contactCanvas = document.getElementById('contactCanvas');
+                this.speedCanvas = document.getElementById('speedCanvas');
+                this.animationCtx = this.animationCanvas.getContext('2d');
+                this.contactCtx = this.contactCanvas.getContext('2d');
+                this.speedCtx = this.speedCanvas.getContext('2d');
+                
+                this.isRunning = false;
+                this.startTime = 0;
+                this.animationId = null;
+                
+                this.brushPosition = 0;
+                this.brushDirection = 1;
+                this.waferAngle = 0;
+                this.brushAngle = 0;
+                this.currentSection = 1;
+                this.currentSpeed = 0;
+                this.totalCycles = 0;
+                
+                this.contactData = new Map();
+                this.maxContactTime = 0;
+                this.speedHistory = [];
+                
+                this.setupCanvases();
+                this.setupEventListeners();
+                this.clear();
+            }
+            
+            setupCanvases() {
+                // Initial setup
+                this.resizeCanvases();
+                
+                // Add resize listener with debouncing to prevent excessive calls
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        this.resizeCanvases();
+                    }, 100);
+                });
+            }
+            
+            resizeCanvases() {
+                const containers = document.querySelectorAll('.animation-container');
+                containers.forEach((container) => {
+                    const canvas = container.querySelector('canvas');
+                    const containerWidth = container.clientWidth - 50;
+                    const size = Math.min(containerWidth, 350);
+                    
+                    // Set both canvas internal dimensions and display size to same value
+                    canvas.width = size;
+                    canvas.height = size;
+                    
+                    // Force square aspect ratio in CSS
+                    canvas.style.width = size + 'px';
+                    canvas.style.height = size + 'px';
+                    canvas.style.aspectRatio = '1';
+                });
+                
+                if (!this.isRunning) {
+                    this.drawAnimation();
+                    this.drawContactProfile();
+                    this.drawSpeedProfile();
+                }
+            }
+            
+            setupEventListeners() {
+                document.getElementById('startBtn').addEventListener('click', () => this.start());
+                document.getElementById('stopBtn').addEventListener('click', () => this.stop());
+                document.getElementById('clearBtn').addEventListener('click', () => this.clear());
+                
+                document.getElementById('waferDir').addEventListener('click', (e) => {
+                    e.target.textContent = e.target.textContent === 'CW' ? 'CCW' : 'CW';
+                });
+                
+                document.getElementById('brushDir').addEventListener('click', (e) => {
+                    e.target.textContent = e.target.textContent === 'CW' ? 'CCW' : 'CW';
+                });
+                
+                const inputs = ['waferDiameter', 'brushOuter', 'brushInner', 'waferRPM', 'brushRPM', 'brushSpeed1', 'brushSpeed2', 'brushSpeed3', 'brushSpeed4', 'brushSpeed5', 'brushStartPos', 'pathCurvature', 'travelDistance', 'processTime', 'dataDensity'];
+                inputs.forEach(id => {
+                    document.getElementById(id).addEventListener('input', () => {
+                        if (!this.isRunning) {
+                            this.drawAnimation();
+                            this.drawSpeedProfile();
+                        }
+                    });
+                });
+            }
+            
+            getInputs() {
+                return {
+                    waferDiameter: parseFloat(document.getElementById('waferDiameter').value),
+                    brushOuter: parseFloat(document.getElementById('brushOuter').value),
+                    brushInner: parseFloat(document.getElementById('brushInner').value),
+                    waferRPM: parseFloat(document.getElementById('waferRPM').value),
+                    brushRPM: parseFloat(document.getElementById('brushRPM').value),
+                    brushSpeed1: parseFloat(document.getElementById('brushSpeed1').value),
+                    brushSpeed2: parseFloat(document.getElementById('brushSpeed2').value),
+                    brushSpeed3: parseFloat(document.getElementById('brushSpeed3').value),
+                    brushSpeed4: parseFloat(document.getElementById('brushSpeed4').value),
+                    brushSpeed5: parseFloat(document.getElementById('brushSpeed5').value),
+                    brushStartPos: parseFloat(document.getElementById('brushStartPos').value),
+                    pathCurvature: parseFloat(document.getElementById('pathCurvature').value),
+                    travelDistance: parseFloat(document.getElementById('travelDistance').value),
+                    processTime: parseFloat(document.getElementById('processTime').value),
+                    dataDensity: document.getElementById('dataDensity').value,
+                    waferDir: document.getElementById('waferDir').textContent === 'CW' ? 1 : -1,
+                    brushDir: document.getElementById('brushDir').textContent === 'CW' ? 1 : -1
+                };
+            }
+            
+            calculateBrushPath(inputs, position) {
+                const waferRadius = inputs.waferDiameter / 2;
+                const maxTravel = inputs.travelDistance;
+                const startPos = inputs.brushStartPos;
+                
+                const x = -startPos + position;
+                
+                let y = 0;
+                if (inputs.pathCurvature > 0) {
+                    const pathCenter = maxTravel / 2;
+                    const relativePos = position - pathCenter;
+                    const baseRadius = maxTravel / 2;
+                    const arcRadius = baseRadius / Math.max(inputs.pathCurvature, 0.1);
+                    const chordHalf = maxTravel / 2;
+                    const sagitta = arcRadius - Math.sqrt(Math.max(0, arcRadius * arcRadius - chordHalf * chordHalf));
+                    const distanceFromArcCenter = Math.abs(relativePos);
+                    
+                    if (distanceFromArcCenter <= chordHalf) {
+                        const yFromArcBottom = Math.sqrt(Math.max(0, arcRadius * arcRadius - relativePos * relativePos));
+                        y = yFromArcBottom - (arcRadius - sagitta);
+                    }
+                    
+                    const distanceFromWaferCenter = Math.sqrt(x * x + y * y);
+                    const brushRadius = inputs.brushOuter / 2;
+                    
+                    if (distanceFromWaferCenter + brushRadius > waferRadius) {
+                        const maxAllowedDistance = waferRadius - brushRadius;
+                        if (distanceFromWaferCenter > 0) {
+                            const scaleFactor = maxAllowedDistance / distanceFromWaferCenter;
+                            y *= scaleFactor;
+                        }
+                    }
+                }
+                
+                return { x, y };
+            }
+            
+            start() {
+                if (this.isRunning) return;
+                
+                const ctx = this.contactCtx;
+                const canvas = this.contactCanvas;
+                const inputs = this.getInputs();
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const scale = Math.min(canvas.width, canvas.height) / inputs.waferDiameter * 0.8;
+                const waferRadius = inputs.waferDiameter / 2;
+                
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, waferRadius * scale, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#ecf0f1';
+                ctx.lineWidth = Math.max(2, canvas.width / 100);
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, waferRadius * scale, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                this.isRunning = true;
+                this.startTime = Date.now();
+                this.lastFrameTime = this.startTime;
+                this.speedHistory = [];
+                document.getElementById('status').textContent = 'Simulation running...';
+                
+                this.animate();
+            }
+            
+            stop() {
+                this.isRunning = false;
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                document.getElementById('status').textContent = 'Simulation stopped';
+            }
+            
+            clear() {
+                this.stop();
+                this.brushPosition = 0;
+                this.brushDirection = 1;
+                this.waferAngle = 0;
+                this.brushAngle = 0;
+                this.currentSection = 1;
+                this.currentSpeed = 0;
+                this.totalCycles = 0;
+                this.contactData.clear();
+                this.maxContactTime = 0;
+                this.speedHistory = [];
+                
+                this.animationCtx.clearRect(0, 0, this.animationCanvas.width, this.animationCanvas.height);
+                this.contactCtx.clearRect(0, 0, this.contactCanvas.width, this.contactCanvas.height);
+                this.speedCtx.clearRect(0, 0, this.speedCanvas.width, this.speedCanvas.height);
+                
+                this.drawAnimation();
+                this.drawContactProfile();
+                this.drawSpeedProfile();
+                this.updateStats();
+                document.getElementById('status').textContent = 'Ready to start simulation';
+            }
+            
+            animate() {
+                if (!this.isRunning) return;
+                
+                const inputs = this.getInputs();
+                const currentTime = Date.now();
+                const deltaTime = (currentTime - (this.lastFrameTime || this.startTime)) / 1000;
+                this.lastFrameTime = currentTime;
+                
+                const elapsedTime = (currentTime - this.startTime) / 1000;
+                
+                if (elapsedTime >= inputs.processTime) {
+                    this.stop();
+                    document.getElementById('status').textContent = `Simulation completed in ${inputs.processTime} seconds`;
+                    return;
+                }
+                
+                this.updatePositions(inputs, elapsedTime, deltaTime);
+                this.calculateAndDrawContact(inputs);
+                this.drawAnimation();
+                this.drawContactProfile();
+                this.drawSpeedProfile();
+                this.updateStats();
+                
+                const progress = (elapsedTime / inputs.processTime * 100).toFixed(1);
+                document.getElementById('status').textContent = 
+                    `Running... ${elapsedTime.toFixed(1)}s / ${inputs.processTime}s (${progress}%)`;
+                
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+            
+            updatePositions(inputs, elapsedTime, deltaTime) {
+                const waferRadiansPerSecond = (inputs.waferRPM * inputs.waferDir * 2 * Math.PI) / 60;
+                this.waferAngle += waferRadiansPerSecond * deltaTime;
+                
+                const brushRadiansPerSecond = (inputs.brushRPM * inputs.brushDir * 2 * Math.PI) / 60;
+                this.brushAngle += brushRadiansPerSecond * deltaTime;
+                
+                this.updateBrushLinearPosition(inputs, elapsedTime);
+            }
+            
+            updateBrushLinearPosition(inputs, elapsedTime) {
+                const speeds = [inputs.brushSpeed1, inputs.brushSpeed2, inputs.brushSpeed3, inputs.brushSpeed4, inputs.brushSpeed5];
+                const sectionDistance = inputs.travelDistance / 5;
+                
+                const forwardSectionTimes = speeds.map(speed => sectionDistance / speed);
+                const forwardTime = forwardSectionTimes.reduce((sum, time) => sum + time, 0);
+                
+                const backwardSectionTimes = [...speeds].reverse().map(speed => sectionDistance / speed);
+                const backwardTime = backwardSectionTimes.reduce((sum, time) => sum + time, 0);
+                
+                const totalCycleTime = forwardTime + backwardTime;
+                
+                const newCycles = Math.floor(elapsedTime / totalCycleTime);
+                if (newCycles > this.totalCycles) {
+                    this.totalCycles = newCycles;
+                }
+                
+                const cyclePosition = elapsedTime % totalCycleTime;
+                
+                if (cyclePosition <= forwardTime) {
+                    this.brushDirection = 1;
+                    let cumulativeTime = 0;
+                    let cumulativeDistance = 0;
+                    
+                    for (let i = 0; i < 5; i++) {
+                        const sectionTime = forwardSectionTimes[i];
+                        if (cyclePosition <= cumulativeTime + sectionTime) {
+                            const timeInSection = cyclePosition - cumulativeTime;
+                            const distanceInSection = timeInSection * speeds[i];
+                            this.brushPosition = cumulativeDistance + distanceInSection;
+                            this.currentSection = i + 1;
+                            this.currentSpeed = speeds[i];
+                            return;
+                        }
+                        cumulativeTime += sectionTime;
+                        cumulativeDistance += sectionDistance;
+                    }
+                    this.brushPosition = inputs.travelDistance;
+                } else {
+                    this.brushDirection = -1;
+                    const backwardElapsed = cyclePosition - forwardTime;
+                    const reversedSpeeds = [...speeds].reverse();
+                    
+                    let cumulativeTime = 0;
+                    let cumulativeDistance = 0;
+                    
+                    for (let i = 0; i < 5; i++) {
+                        const sectionTime = backwardSectionTimes[i];
+                        if (backwardElapsed <= cumulativeTime + sectionTime) {
+                            const timeInSection = backwardElapsed - cumulativeTime;
+                            const distanceInSection = timeInSection * reversedSpeeds[i];
+                            this.brushPosition = inputs.travelDistance - (cumulativeDistance + distanceInSection);
+                            this.currentSection = 5 - i;
+                            this.currentSpeed = reversedSpeeds[i];
+                            return;
+                        }
+                        cumulativeTime += sectionTime;
+                        cumulativeDistance += sectionDistance;
+                    }
+                    this.brushPosition = 0;
+                }
+                
+                if (this.speedHistory.length > 200) {
+                    this.speedHistory.shift();
+                }
+                this.speedHistory.push({
+                    time: elapsedTime,
+                    speed: this.currentSpeed,
+                    section: this.currentSection
+                });
+            }
+            
+            calculateAndDrawContact(inputs) {
+                const densityMap = { low: 8, medium: 5, high: 3 };
+                const step = densityMap[inputs.dataDensity];
+                
+                const waferRadius = inputs.waferDiameter / 2;
+                const brushOuterRadius = inputs.brushOuter / 2;
+                const brushInnerRadius = inputs.brushInner / 2;
+                
+                const brushPath = this.calculateBrushPath(inputs, this.brushPosition);
+                const brushCenterX = brushPath.x;
+                const brushCenterY = brushPath.y;
+                
+                for (let x = -waferRadius; x <= waferRadius; x += step) {
+                    for (let y = -waferRadius; y <= waferRadius; y += step) {
+                        const distFromWaferCenter = Math.sqrt(x * x + y * y);
+                        if (distFromWaferCenter > waferRadius) continue;
+                        
+                        const distFromBrushCenter = Math.sqrt(
+                            (x - brushCenterX) * (x - brushCenterX) + 
+                            (y - brushCenterY) * (y - brushCenterY)
+                        );
+                        
+                        const isInContact = distFromBrushCenter <= brushOuterRadius && 
+                                          distFromBrushCenter >= brushInnerRadius;
+                        
+                        if (isInContact) {
+                            const cos_angle = Math.cos(-this.waferAngle);
+                            const sin_angle = Math.sin(-this.waferAngle);
+                            const waferFixedX = x * cos_angle - y * sin_angle;
+                            const waferFixedY = x * sin_angle + y * cos_angle;
+                            
+                            const key = `${Math.round(waferFixedX / step) * step},${Math.round(waferFixedY / step) * step}`;
+                            const currentContact = this.contactData.get(key) || 0;
+                            this.contactData.set(key, currentContact + 1);
+                            this.maxContactTime = Math.max(this.maxContactTime, currentContact + 1);
+                        }
+                    }
+                }
+            }
+            
+            drawAnimation() {
+                const ctx = this.animationCtx;
+                const canvas = this.animationCanvas;
+                const inputs = this.getInputs();
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const scale = Math.min(canvas.width, canvas.height) / (inputs.waferDiameter + 100);
+                
+                const waferRadius = inputs.waferDiameter / 2 * scale;
+                ctx.strokeStyle = '#ecf0f1';
+                ctx.lineWidth = Math.max(2, canvas.width / 100);
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, waferRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                ctx.fillStyle = 'rgba(236, 240, 241, 0.1)';
+                ctx.fill();
+                
+                ctx.strokeStyle = '#bdc3c7';
+                ctx.lineWidth = Math.max(1, canvas.width / 200);
+                for (let i = 0; i < 8; i++) {
+                    const angle = this.waferAngle + i * Math.PI / 4;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(
+                        centerX + Math.cos(angle) * waferRadius * 0.8,
+                        centerY + Math.sin(angle) * waferRadius * 0.8
+                    );
+                    ctx.stroke();
+                }
+                
+                ctx.strokeStyle = '#f39c12';
+                ctx.lineWidth = Math.max(2, canvas.width / 120);
+                ctx.setLineDash([canvas.width / 40, canvas.width / 40]);
+                ctx.beginPath();
+                
+                const pathPoints = [];
+                for (let pos = 0; pos <= inputs.travelDistance; pos += 5) {
+                    const pathPoint = this.calculateBrushPath(inputs, pos);
+                    const screenX = centerX + pathPoint.x * scale;
+                    const screenY = centerY + pathPoint.y * scale;
+                    pathPoints.push({ x: screenX, y: screenY });
+                }
+                
+                if (pathPoints.length > 0) {
+                    ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+                    for (let i = 1; i < pathPoints.length; i++) {
+                        ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+                    }
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                const startPoint = this.calculateBrushPath(inputs, 0);
+                ctx.fillStyle = '#e67e22';
+                ctx.beginPath();
+                const indicatorRadius = Math.max(3, canvas.width / 60);
+                ctx.arc(centerX + startPoint.x * scale, centerY + startPoint.y * scale, indicatorRadius, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.strokeStyle = '#d35400';
+                ctx.lineWidth = Math.max(1, canvas.width / 200);
+                ctx.stroke();
+                
+                const brushPath = this.calculateBrushPath(inputs, this.brushPosition);
+                const brushCenterX = centerX + brushPath.x * scale;
+                const brushCenterY = centerY + brushPath.y * scale;
+                const brushOuterRadius = inputs.brushOuter / 2 * scale;
+                const brushInnerRadius = inputs.brushInner / 2 * scale;
+                
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = Math.max(2, canvas.width / 100);
+                ctx.beginPath();
+                ctx.arc(brushCenterX, brushCenterY, brushOuterRadius, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                ctx.fillStyle = 'rgba(231, 76, 60, 0.2)';
+                ctx.fill();
+                
+                if (brushInnerRadius > 0) {
+                    ctx.strokeStyle = '#c0392b';
+                    ctx.beginPath();
+                    ctx.arc(brushCenterX, brushCenterY, brushInnerRadius, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#2c3e50';
+                    ctx.fill();
+                }
+                
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = Math.max(1, canvas.width / 150);
+                ctx.shadowColor = '#000000';
+                ctx.shadowBlur = 2;
+                const spokeCount = brushInnerRadius > 0 ? 6 : 8;
+                for (let i = 0; i < spokeCount; i++) {
+                    const angle = this.brushAngle + i * (2 * Math.PI) / spokeCount;
+                    const innerStart = brushInnerRadius > 0 ? brushInnerRadius : 0;
+                    ctx.beginPath();
+                    ctx.moveTo(
+                        brushCenterX + Math.cos(angle) * innerStart,
+                        brushCenterY + Math.sin(angle) * innerStart
+                    );
+                    ctx.lineTo(
+                        brushCenterX + Math.cos(angle) * brushOuterRadius * 0.85,
+                        brushCenterY + Math.sin(angle) * brushOuterRadius * 0.85
+                    );
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#c0392b';
+                ctx.lineWidth = Math.max(1, canvas.width / 200);
+                ctx.beginPath();
+                const centerDotRadius = Math.max(2, canvas.width / 100);
+                ctx.arc(brushCenterX, brushCenterY, centerDotRadius, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+                
+                const arrowAngle = this.brushDirection > 0 ? 0 : Math.PI;
+                const arrowX = brushCenterX + Math.cos(arrowAngle) * brushOuterRadius * 0.6;
+                const arrowY = brushCenterY + Math.sin(arrowAngle) * brushOuterRadius * 0.6;
+                const arrowSize = Math.max(4, canvas.width / 50);
+                
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.moveTo(arrowX, arrowY);
+                ctx.lineTo(arrowX - arrowSize * this.brushDirection, arrowY - arrowSize/2);
+                ctx.lineTo(arrowX - arrowSize * this.brushDirection, arrowY + arrowSize/2);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            drawContactProfile() {
+                const ctx = this.contactCtx;
+                const canvas = this.contactCanvas;
+                const inputs = this.getInputs();
+                
+                if (!this.isRunning) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    const scale = Math.min(canvas.width, canvas.height) / inputs.waferDiameter * 0.8;
+                    const waferRadius = inputs.waferDiameter / 2;
+                    
+                    ctx.fillStyle = '#2c3e50';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, waferRadius * scale, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = '#ecf0f1';
+                    ctx.lineWidth = Math.max(2, canvas.width / 100);
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, waferRadius * scale, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    return;
+                }
+                
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const scale = Math.min(canvas.width, canvas.height) / inputs.waferDiameter * 0.8;
+                const waferRadius = inputs.waferDiameter / 2;
+                
+                for (const [key, contactTime] of this.contactData.entries()) {
+                    const [x, y] = key.split(',').map(Number);
+                    const intensity = this.maxContactTime > 0 ? contactTime / this.maxContactTime : 0;
+                    
+                    let red, green, blue;
+                    if (intensity === 0) {
+                        red = 0; green = 255; blue = 0;
+                    } else if (intensity < 0.5) {
+                        red = Math.floor(255 * intensity * 2);
+                        green = 255;
+                        blue = 0;
+                    } else {
+                        red = 255;
+                        green = Math.floor(255 * (1 - intensity));
+                        blue = 0;
+                    }
+                    
+                    ctx.fillStyle = `rgb(${red}, ${green}, ${blue})`;
+                    const basePixelSize = Math.max(2, canvas.width / 50);
+                    const pixelSize = inputs.dataDensity === 'high' ? basePixelSize * 0.5 : 
+                                    inputs.dataDensity === 'medium' ? basePixelSize * 0.75 : basePixelSize;
+                    
+                    const screenX = centerX + x * scale;
+                    const screenY = centerY + y * scale;
+                    const distFromCenter = Math.sqrt((screenX - centerX) * (screenX - centerX) + (screenY - centerY) * (screenY - centerY));
+                    
+                    if (distFromCenter <= waferRadius * scale) {
+                        ctx.fillRect(
+                            screenX - pixelSize/2,
+                            screenY - pixelSize/2,
+                            pixelSize, pixelSize
+                        );
+                    }
+                }
+            }
+            
+            drawSpeedProfile() {
+                const ctx = this.speedCtx;
+                const canvas = this.speedCanvas;
+                const inputs = this.getInputs();
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const margin = Math.max(20, canvas.width * 0.1);
+                const chartWidth = canvas.width - 2 * margin;
+                const chartHeight = canvas.height - 2 * margin;
+                
+                ctx.strokeStyle = '#34495e';
+                ctx.lineWidth = Math.max(1, canvas.width / 200);
+                ctx.beginPath();
+                ctx.moveTo(margin, margin);
+                ctx.lineTo(margin, canvas.height - margin);
+                ctx.lineTo(canvas.width - margin, canvas.height - margin);
+                ctx.stroke();
+                
+                const speeds = [inputs.brushSpeed1, inputs.brushSpeed2, inputs.brushSpeed3, inputs.brushSpeed4, inputs.brushSpeed5];
+                const maxSpeed = Math.max(...speeds);
+                const sectionWidth = chartWidth / 5;
+                
+                for (let i = 0; i < 5; i++) {
+                    const x = margin + i * sectionWidth;
+                    const speedHeight = (speeds[i] / maxSpeed) * chartHeight;
+                    const y = canvas.height - margin - speedHeight;
+                    
+                    ctx.fillStyle = `rgba(149, 165, 166, 0.3)`;
+                    ctx.fillRect(x, y, sectionWidth, speedHeight);
+                    
+                    ctx.strokeStyle = '#95a5a6';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x, y, sectionWidth, speedHeight);
+                    
+                    ctx.fillStyle = '#ffffff';
+                    const fontSize = Math.max(8, canvas.width / 30);
+                    ctx.font = `bold ${fontSize}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.strokeStyle = '#2c3e50';
+                    ctx.lineWidth = Math.max(1, canvas.width / 150);
+                    ctx.strokeText(`${speeds[i]}`, x + sectionWidth/2, y - fontSize/2);
+                    ctx.fillText(`${speeds[i]}`, x + sectionWidth/2, y - fontSize/2);
+                    ctx.strokeText(`S${i+1}`, x + sectionWidth/2, canvas.height - margin + fontSize * 1.5);
+                    ctx.fillText(`S${i+1}`, x + sectionWidth/2, canvas.height - margin + fontSize * 1.5);
+                }
+                
+                if (this.currentSection >= 1 && this.currentSection <= 5) {
+                    const sectionIndex = this.currentSection - 1;
+                    const x = margin + sectionIndex * sectionWidth;
+                    const speedHeight = (this.currentSpeed / maxSpeed) * chartHeight;
+                    const y = canvas.height - margin - speedHeight;
+                    
+                    ctx.fillStyle = 'rgba(52, 152, 219, 0.7)';
+                    ctx.fillRect(x, y, sectionWidth, speedHeight);
+                    
+                    ctx.strokeStyle = '#3498db';
+                    ctx.lineWidth = Math.max(2, canvas.width / 120);
+                    ctx.strokeRect(x, y, sectionWidth, speedHeight);
+                }
+                
+                if (this.speedHistory.length > 1) {
+                    ctx.strokeStyle = '#e74c3c';
+                    ctx.lineWidth = Math.max(1, canvas.width / 200);
+                    ctx.beginPath();
+                    
+                    const timeRange = Math.max(10, this.speedHistory[this.speedHistory.length - 1].time);
+                    
+                    for (let i = 0; i < this.speedHistory.length; i++) {
+                        const point = this.speedHistory[i];
+                        const x = margin + (point.time / timeRange) * chartWidth;
+                        const y = canvas.height - margin - (point.speed / maxSpeed) * chartHeight;
+                        
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.stroke();
+                }
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.strokeStyle = '#2c3e50';
+                ctx.lineWidth = Math.max(1, canvas.width / 200);
+                const titleFontSize = Math.max(10, canvas.width / 25);
+                ctx.font = `bold ${titleFontSize}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.strokeText('Brush Speed Profile by Section', canvas.width / 2, titleFontSize * 1.5);
+                ctx.fillText('Brush Speed Profile by Section', canvas.width / 2, titleFontSize * 1.5);
+                
+                const labelFontSize = Math.max(8, canvas.width / 35);
+                ctx.font = `bold ${labelFontSize}px Arial`;
+                ctx.save();
+                ctx.translate(labelFontSize * 1.5, canvas.height / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.strokeText('Speed (mm/s)', 0, 0);
+                ctx.fillText('Speed (mm/s)', 0, 0);
+                ctx.restore();
+                
+                ctx.strokeText('Section', canvas.width / 2, canvas.height - labelFontSize/2);
+                ctx.fillText('Section', canvas.width / 2, canvas.height - labelFontSize/2);
+            }
+            
+            updateStats() {
+                const currentTime = this.isRunning ? (Date.now() - this.startTime) / 1000 : 0;
+                document.getElementById('simulationTimer').textContent = currentTime.toFixed(1) + 's';
+            }
+        }
+        
+        window.addEventListener('load', () => {
+            new BrushWaferSimulator();
+        });
+    </script>
+</body>
+</html>
+                
